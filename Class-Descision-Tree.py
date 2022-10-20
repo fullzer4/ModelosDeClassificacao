@@ -7,6 +7,14 @@ from sklearn.model_selection import train_test_split
 from sklearn import metrics
 import sklearn.tree as tree
 
+print(r"""        ___________    .__  .__                         _____  
+ ___.__.\_   _____/_ __|  | |  | ________ ___________  /  |  | 
+<   |  | |    __)|  |  \  | |  | \___   // __ \_  __ \/   |  |_
+ \___  | |     \ |  |  /  |_|  |__/    /\  ___/|  | \/    ^   /
+ / ____| \___  / |____/|____/____/_____ \\___  >__|  \____   | 
+ \/          \/                        \/    \/           |__| """)
+print("\n Practices in IBM Course in Coursera")
+
 def warn(*args, **kwargs):
     pass
 import warnings
