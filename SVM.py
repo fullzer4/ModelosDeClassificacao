@@ -3,9 +3,8 @@ import pylab as pl
 import numpy as np
 import scipy.optimize as opt
 from sklearn import preprocessing
-import matplotlib.pyplot as plt 
-
-# imports
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 print(r"""        ___________    .__  .__                         _____  
  ___.__.\_   _____/_ __|  | |  | ________ ___________  /  |  | 
@@ -15,61 +14,49 @@ print(r"""        ___________    .__  .__                         _____
  \/          \/                        \/    \/           |__| """)
 print("\n Practices in IBM Course in Coursera")
 
-churn_df = pd.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-ML0101EN-SkillsNetwork/labs/Module%203/data/ChurnData.csv")
+cell_df = pd.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-ML0101EN-SkillsNetwork/labs/Module%203/data/cell_samples.csv")
+# print(cell_df.head())
+# verificando
 
-# pegando csv
+ax = cell_df[cell_df['Class'] == 4][0:50].plot(kind='scatter', x='Clump', y='UnifSize', color='DarkBlue', label='malignant');
+cell_df[cell_df['Class'] == 2][0:50].plot(kind='scatter', x='Clump', y='UnifSize', color='Yellow', label='benign', ax=ax);
 
-churn_df = churn_df[['tenure', 'age', 'address', 'income', 'ed', 'employ', 'equip',   'callcard', 'wireless','churn']]
-churn_df['churn'] = churn_df['churn'].astype('int')
+# print("\n olhando tipos das colunas: ", cell_df.dtypes)
+# verificando tipos
 
-# definindo e preparando para o sklearn
+cell_df = cell_df[pd.to_numeric(cell_df['BareNuc'], errors='coerce').notnull()]
+cell_df['BareNuc'] = cell_df['BareNuc'].astype('int')
+cell_df.dtypes
 
-print(churn_df.head(), "\n linhas e colunas: ", churn_df.shape)
-# visualizando nossas definicoes e o numero de colunas e linhas
+# preparando nossos dados
 
-X = np.asarray(churn_df[['tenure', 'age', 'address', 'income', 'ed', 'employ', 'equip']])
+feature_df = cell_df[['Clump', 'UnifSize', 'UnifShape', 'MargAdh', 'SingEpiSize', 'BareNuc', 'BlandChrom', 'NormNucl', 'Mit']]
+X = np.asarray(feature_df)
 X[0:5]
 
-y = np.asarray(churn_df['churn'])
+cell_df['Class'] = cell_df['Class'].astype('int')
+y = np.asarray(cell_df['Class'])
 y [0:5]
 
-#definindo X e Y
+# definindo x e y
 
-from sklearn import preprocessing
-X = preprocessing.StandardScaler().fit(X).transform(X)
-X[0:5]
-
-# normalizando nosso dataset
-
-from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split( X, y, test_size=0.2, random_state=4)
 print ('\n Train set:', X_train.shape,  y_train.shape)
 print ('\n Test set:', X_test.shape,  y_test.shape)
 
-# definindo o nosso treino e test
+# treino e teste
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix
-LR = LogisticRegression(C=0.01, solver='liblinear').fit(X_train,y_train)
-LR
+from sklearn import svm
+clf = svm.SVC(kernel='rbf')
+clf.fit(X_train, y_train) 
+yhat = clf.predict(X_test)
+yhat [0:5]
 
-# modelando nosso algoritimo
-
-yhat = LR.predict(X_test)
-yhat
-
-# prevendo usando test set
-
-yhat_prob = LR.predict_proba(X_test)
-yhat_prob
-
-#
-
-from sklearn.metrics import jaccard_score
-print("\n Avaliando usando jaccard: ", jaccard_score(y_test, yhat,pos_label=0))
+# modelando nosso svm
 
 from sklearn.metrics import classification_report, confusion_matrix
 import itertools
+
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
                           title='Confusion matrix',
@@ -103,22 +90,30 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-confusion_matrix(y_test, yhat, labels=[1,0])
 
-cnf_matrix = confusion_matrix(y_test, yhat, labels=[1,0])
-
+# Compute confusion matrix
+cnf_matrix = confusion_matrix(y_test, yhat, labels=[2,4])
 np.set_printoptions(precision=2)
 
-print("\n", classification_report(y_test, yhat))
-# ver a precisao do nosso modelo
+print (classification_report(y_test, yhat))
 
-from sklearn.metrics import log_loss
-print("\n LogLoss: ", log_loss(y_test, yhat_prob))
+# Plot non-normalized confusion matrix
+plt.figure()
+plot_confusion_matrix(cnf_matrix, classes=['Benign(2)','Malignant(4)'],normalize= False,  title='Confusion matrix')
 
-# vendo log loss
+from sklearn.metrics import f1_score
+print("\n f1score : ",f1_score(y_test, yhat, average='weighted'))
 
-LR2 = LogisticRegression(C=0.01, solver='sag').fit(X_train,y_train)
-yhat_prob2 = LR2.predict_proba(X_test)
-print ("\n LogLoss: : %.2f" % log_loss(y_test, yhat_prob2))
+from sklearn.metrics import jaccard_score
+print("\n jaccard : ",jaccard_score(y_test, yhat,pos_label=2))
+# avaliando
 
-# vendo a LogLoss usando mas com o solver e o reg diferente
+print("\n segundo modelo")
+
+clf2 = svm.SVC(kernel='linear')
+clf2.fit(X_train, y_train) 
+yhat2 = clf2.predict(X_test)
+print("\n Avg F1-score: %.4f" % f1_score(y_test, yhat2, average='weighted'))
+print("\n Jaccard score: %.4f" % jaccard_score(y_test, yhat2,pos_label=2))
+
+# mudando o kernel do nosso modelo
